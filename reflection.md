@@ -1,11 +1,25 @@
 # PawPal+ Project Reflection
 
 ## 1. System Design
+My initial design for PawPal+ focused on the main user needs described in the scenario. I identified three core actions:
+
+1. Enter and manage owner and pet information.
+2. Add, edit, and prioritize pet care tasks.
+3. Generate and view a daily care plan based on available time, task duration, and task priority.
+
+The main classes in my design were Owner, Pet, Task, and Scheduler.
+
+- Owner stores the owner's information, available time, and preferences.
+- Pet stores the pet's basic information.
+- Task stores each care activity with attributes such as duration, priority, category, and completion status.
+- Scheduler is responsible for organizing tasks and generating a daily plan.
+
 
 **a. Initial design**
 
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
+
 
 **b. Design changes**
 
