@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import date
 
 
 @dataclass
@@ -8,7 +9,9 @@ class Task:
     duration: int           # in minutes
     priority: int           # 1 (low) to 5 (high)
     category: str           # e.g. "feeding", "walking", "medication", "grooming"
-    frequency: str = "daily"  # e.g. "daily", "weekly", "as needed"
+    frequency: str = "daily"        # e.g. "daily", "weekly", "as needed"
+    start_time: str = "08:00"       # 24-hour "HH:MM" format
+    due_date: date = field(default_factory=date.today)
     completed: bool = False
 
     def edit_task(self, **kwargs):
@@ -72,51 +75,3 @@ class Owner:
         for pet in self.pets:
             all_tasks.extend(pet.get_tasks())
         return all_tasks
-
-
-class Scheduler:
-    def __init__(self, owner):
-        self.owner = owner
-        self.daily_plan = []
-
-    def add_task(self, pet, task):
-        """Assign a task to a specific pet."""
-        pet.add_task(task)
-
-    def edit_task(self, task_id, **kwargs):
-        """Find a task by ID across all pets and update its fields."""
-        for task in self.owner.get_all_tasks():
-            if task.task_id == task_id:
-                task.edit_task(**kwargs)
-                return
-
-    def generate_plan(self):
-        """Build a priority-sorted daily plan that fits within the owner's available time."""
-        all_tasks = self.owner.get_all_tasks()
-        pending = [t for t in all_tasks if not t.completed]
-        self.daily_plan = sorted(pending, key=lambda t: t.priority, reverse=True)
-
-        scheduled, total = [], 0
-        for task in self.daily_plan:
-            if total + task.duration <= self.owner.available_time:
-                scheduled.append(task)
-                total += task.duration
-
-        self.daily_plan = scheduled
-        return self.daily_plan
-
-    def explain_plan(self):
-        """Print a formatted summary of the current daily plan to the terminal."""
-        if not self.daily_plan:
-            self.generate_plan()
-        print(f"\nDaily Plan for {self.owner.name} ({self.owner.available_time} min available)")
-        print("-" * 45)
-        for task in self.daily_plan:
-            status = "Done" if task.completed else "Pending"
-            print(f"  [{task.priority}★] {task.title} | {task.duration} min | {task.category} | {status}")
-        print("-" * 45)
-        print(f"  Total scheduled: {self.get_total_scheduled_time()} min")
-
-    def get_total_scheduled_time(self):
-        """Return the total duration in minutes of all tasks in the daily plan."""
-        return sum(task.duration for task in self.daily_plan)

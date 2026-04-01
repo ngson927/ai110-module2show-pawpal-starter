@@ -22,6 +22,41 @@ Your final app should:
 - Display the plan clearly (and ideally explain the reasoning)
 - Include tests for the most important scheduling behaviors
 
+## Smarter Scheduling
+
+The `Scheduler` class (in `scheduler.py`) goes beyond a simple task list with four algorithmic features:
+
+- **Sort by time** — `sort_by_time()` orders any task list chronologically using each task's `start_time` (HH:MM), converting it to a `(hour, minute)` tuple for accurate comparison.
+- **Flexible filtering** — `filter_tasks(pet_name, completed)` lets you query tasks by pet, by status, or both at once. Underlying helpers `get_tasks_by_pet()` and `get_tasks_by_status()` remain available for single-criteria lookups.
+- **Recurring tasks** — `complete_and_reschedule()` marks a task done and automatically creates the next occurrence using Python's `timedelta`: daily tasks roll forward one day, weekly tasks roll forward seven days. One-off (`as needed`) tasks are completed without spawning a follow-up.
+- **Conflict detection** — `detect_conflicts()` checks every unique pair of tasks (via `itertools.combinations`) for two problem types: duplicate task titles on the same pet, and time-window overlaps across any pets. Conflicts are returned as plain warning strings — the scheduler never crashes, and the owner decides how to resolve them.
+
+## Testing PawPal+
+
+### Run the tests
+
+```bash
+python3.11 -m pytest tests/test_pawpal.py -v
+```
+
+### What the tests cover
+
+The test suite in `tests/test_pawpal.py` contains 14 tests across five groups:
+
+| Group | Tests | What's verified |
+|---|---|---|
+| **Core behavior** | 2 | `mark_complete()` flips status; adding a task increases pet task count |
+| **Sorting** | 2 | Tasks returned in chronological order; correct tie-breaking within the same hour |
+| **Recurrence** | 4 | Daily tasks roll forward +1 day; weekly tasks roll forward +7 days; `as needed` tasks produce no clone; invalid task ID returns `None` safely |
+| **Conflict detection** | 3 | Overlapping time windows flagged; exact same start time flagged; clean schedule returns no conflicts |
+| **Edge cases** | 3 | Pet with no tasks returns empty plan; total scheduled time never exceeds `available_time`; unknown pet name returns empty list |
+
+### Confidence level
+
+★★★★☆ (4 / 5)
+
+The core scheduling behaviors — priority sorting, time-bounding, recurrence, and conflict detection — are all covered and passing. Confidence is high for the happy paths and the most likely edge cases. One star is withheld because the tests use in-memory data only (no persistence layer), and the Streamlit UI interactions in `app.py` are not yet tested automatically.
+
 ## Getting started
 
 ### Setup

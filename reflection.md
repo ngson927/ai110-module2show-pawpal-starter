@@ -51,6 +51,10 @@ In addition, I recognized that task priority needs a clearly defined meaning, su
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
 
+The scheduler detects time overlap conflicts but does not resolve them. When two tasks overlap, it prints a warning and still includes both tasks in the generated plan. A more advanced system might automatically reschedule the lower-priority task or block it from being added. However, for a personal pet care app with a small number of tasks, warning the owner and letting them decide is the more appropriate behavior. Automatically rescheduling could move a medication task to an inconvenient time without the owner's knowledge, which is worse than surfacing the conflict clearly.
+
+A second tradeoff is that conflict detection runs in O(n²) time by comparing every unique pair of tasks using itertools.combinations. For a household with two or three pets and a handful of daily tasks, this is fast and simple. If the app were extended to manage many pets or a full weekly calendar, a more efficient approach such as sorting tasks by start time and doing a linear scan would be worth considering. For this scenario, readability and simplicity were prioritized over performance.
+
 ---
 
 ## 3. AI Collaboration
