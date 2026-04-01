@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass, field
 from datetime import date
 
@@ -75,3 +76,79 @@ class Owner:
         for pet in self.pets:
             all_tasks.extend(pet.get_tasks())
         return all_tasks
+
+    def to_dict(self):
+        """Serialize the Owner, its Pets, and their Tasks to a plain dictionary."""
+        return {
+            "owner_id": self.owner_id,
+            "name": self.name,
+            "available_time": self.available_time,
+            "preferences": self.preferences,
+            "pets": [
+                {
+                    "pet_id": pet.pet_id,
+                    "name": pet.name,
+                    "species": pet.species,
+                    "age": pet.age,
+                    "notes": pet.notes,
+                    "tasks": [
+                        {
+                            "task_id": task.task_id,
+                            "title": task.title,
+                            "duration": task.duration,
+                            "priority": task.priority,
+                            "category": task.category,
+                            "frequency": task.frequency,
+                            "start_time": task.start_time,
+                            "due_date": task.due_date.isoformat(),
+                            "completed": task.completed,
+                        }
+                        for task in pet.get_tasks()
+                    ],
+                }
+                for pet in self.pets
+            ],
+        }
+
+    def save_to_json(self, filepath):
+        """Write the owner's data to a JSON file at filepath."""
+        with open(filepath, "w") as f:
+            json.dump(self.to_dict(), f, indent=2)
+
+    @classmethod
+    def load_from_json(cls, filepath):
+        """Read a JSON file and reconstruct a full Owner with all Pets and Tasks."""
+        with open(filepath, "r") as f:
+            data = json.load(f)
+
+        owner = cls(
+            owner_id=data["owner_id"],
+            name=data["name"],
+            available_time=data["available_time"],
+            preferences=data.get("preferences", {}),
+        )
+
+        for pet_data in data.get("pets", []):
+            pet = Pet(
+                pet_id=pet_data["pet_id"],
+                name=pet_data["name"],
+                species=pet_data["species"],
+                age=pet_data["age"],
+                notes=pet_data.get("notes", ""),
+            )
+            for task_data in pet_data.get("tasks", []):
+                task = Task(
+                    task_id=task_data["task_id"],
+                    title=task_data["title"],
+                    duration=task_data["duration"],
+                    priority=task_data["priority"],
+                    category=task_data["category"],
+                    frequency=task_data.get("frequency", "daily"),
+                    start_time=task_data.get("start_time", "08:00"),
+                    due_date=date.fromisoformat(task_data["due_date"]),
+                    completed=task_data.get("completed", False),
+                )
+                pet.add_task(task)
+            owner.add_pet(pet)
+
+        return owner

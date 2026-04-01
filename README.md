@@ -1,6 +1,51 @@
 # PawPal+ (Module 2 Project)
 
-You are building **PawPal+**, a Streamlit app that helps a pet owner plan care tasks for their pet.
+**PawPal+** is a Streamlit app that helps a pet owner plan daily care tasks for one or more pets. It generates a priority-sorted, time-bounded schedule, detects conflicts, and automatically reschedules recurring tasks.
+
+## 📸 Demo
+
+<a href="/course_images/ai110/pawpal_screenshot.png" target="_blank"><img src='/course_images/ai110/pawpal_screenshot1.png' title='PawPal App' width='' alt='PawPal App' class='center-block' /></a>
+<a href="/course_images/ai110/pawpal_screenshot.png" target="_blank"><img src='/course_images/ai110/pawpal_screenshot2.png' title='PawPal App' width='' alt='PawPal App' class='center-block' /></a>
+
+## Features
+
+### Multi-pet task management
+- Add any number of pets (dogs, cats, or other species) to a single owner profile
+- Assign tasks independently to each pet — feeding, walking, medication, grooming, or custom categories
+- Each task stores a title, duration, priority (1–5), category, start time, frequency, and due date
+
+### Priority-based schedule generation
+- `generate_plan()` selects only pending, today-relevant tasks and sorts them by priority (highest first), breaking ties by shortest duration
+- Tasks are added greedily until the owner's available time is filled
+- Tasks that don't fit are collected in a `skipped` list and shown in the UI with their duration and priority
+
+### Chronological sorting
+- `sort_by_time()` orders any task list by `start_time` (HH:MM) using tuple comparison on `(hour, minute)`, so the schedule always reads as a timeline rather than a priority dump
+- Applied automatically to both the task table and each pet's block in the generated schedule
+
+### Flexible filtering
+- `filter_tasks(pet_name, completed)` queries tasks by pet, by completion status, or both combined
+- Underlying helpers `get_tasks_by_pet()` and `get_tasks_by_status()` available for single-criteria lookups
+
+### Daily and weekly recurrence
+- `complete_and_reschedule()` marks a task done and automatically clones it for the next occurrence
+- `daily` tasks get `due_date + 1 day` using Python's `timedelta`
+- `weekly` tasks get `due_date + 7 days`
+- `as needed` tasks complete without spawning a follow-up
+
+### Conflict detection
+- `detect_conflicts()` scans every unique pair of tasks using `itertools.combinations` and flags two problem types:
+  - **Duplicate title** — same task name assigned more than once to the same pet
+  - **Time overlap** — two tasks whose start/end windows intersect, meaning the owner cannot perform both simultaneously
+- Returns human-readable warning strings; never raises an exception
+- Displayed in the UI before the plan so the owner can resolve conflicts before scheduling
+
+### Streamlit UI
+- Task table sorted by start time on every page load
+- Schedule grouped by pet, each block sorted chronologically
+- Conflict warnings shown with `st.error` / `st.warning` before the plan renders
+- Skipped tasks in a collapsible expander
+- Three summary metrics: scheduled task count, total time used, time remaining
 
 ## Scenario
 
@@ -10,26 +55,15 @@ A busy pet owner needs help staying consistent with pet care. They want an assis
 - Consider constraints (time available, priority, owner preferences)
 - Produce a daily plan and explain why it chose that plan
 
-Your job is to design the system first (UML), then implement the logic in Python, then connect it to the Streamlit UI.
+## Agent Mode
 
-## What you will build
+The following features were implemented using Claude Code in agent mode:
 
-Your final app should:
-
-- Let a user enter basic owner + pet info
-- Let a user add/edit tasks (duration + priority at minimum)
-- Generate a daily schedule/plan based on constraints and priorities
-- Display the plan clearly (and ideally explain the reasoning)
-- Include tests for the most important scheduling behaviors
-
-## Smarter Scheduling
-
-The `Scheduler` class (in `scheduler.py`) goes beyond a simple task list with four algorithmic features:
-
-- **Sort by time** — `sort_by_time()` orders any task list chronologically using each task's `start_time` (HH:MM), converting it to a `(hour, minute)` tuple for accurate comparison.
-- **Flexible filtering** — `filter_tasks(pet_name, completed)` lets you query tasks by pet, by status, or both at once. Underlying helpers `get_tasks_by_pet()` and `get_tasks_by_status()` remain available for single-criteria lookups.
-- **Recurring tasks** — `complete_and_reschedule()` marks a task done and automatically creates the next occurrence using Python's `timedelta`: daily tasks roll forward one day, weekly tasks roll forward seven days. One-off (`as needed`) tasks are completed without spawning a follow-up.
-- **Conflict detection** — `detect_conflicts()` checks every unique pair of tasks (via `itertools.combinations`) for two problem types: duplicate task titles on the same pet, and time-window overlaps across any pets. Conflicts are returned as plain warning strings — the scheduler never crashes, and the owner decides how to resolve them.
+- **Challenge 1 — `find_next_slot(duration)`**: Added to `Scheduler` in `scheduler.py`. Walks the day from 06:00 in 5-minute increments and returns the first `HH:MM` slot where `duration` minutes fit without overlapping any task already in `daily_plan`. Returns `None` if nothing fits before 22:00.
+- **Challenge 2 — JSON persistence**: Added `to_dict()`, `save_to_json()`, and `load_from_json()` to the `Owner` class in `pawpal_system.py`. `app.py` now loads from `data.json` on startup (if it exists) and saves after every "Add pet", "Add task", and "Generate schedule" action.
+- **Challenge 3 — Priority emoji labels**: A `priority_label(priority)` helper in `app.py` maps the 1–5 integer to "🔴 High", "🟡 Medium", or "🟢 Low". Used in both the task table and the schedule display.
+- **Challenge 4 — Category emoji labels**: A `category_emoji(category)` helper in `app.py` maps category strings to labeled emoji strings (e.g. "🦮 Walking", "💊 Medication"). Used alongside `priority_label` in both table views.
+- **Challenge 5 — Prompt comparison**: A new section in `reflection.md` documents a side-by-side test of GPT-4o vs. Claude Sonnet on the recurring-task rescheduling prompt, with analysis of output quality and integration fit.
 
 ## Testing PawPal+
 

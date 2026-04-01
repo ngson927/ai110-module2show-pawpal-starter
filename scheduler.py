@@ -242,3 +242,34 @@ class Scheduler:
     def get_total_scheduled_time(self):
         """Return the total duration in minutes of all tasks in the daily plan."""
         return sum(task.duration for task in self.daily_plan)
+
+    # ------------------------------------------------------------------
+    # Next available slot
+    # ------------------------------------------------------------------
+
+    def find_next_slot(self, duration):
+        """Return the first HH:MM start time where duration minutes fit without overlap.
+
+        Walks from 06:00 to 22:00 in 5-minute increments.  A candidate slot is
+        accepted when [slot, slot+duration) does not overlap any task already in
+        self.daily_plan.  Returns None if no such slot exists before 22:00.
+        """
+        DAY_START = self._to_minutes("06:00")
+        DAY_END   = self._to_minutes("22:00")
+
+        # Build list of (start, end) intervals for planned tasks
+        booked = []
+        for task in sorted(self.daily_plan, key=lambda t: self._to_minutes(t.start_time)):
+            start = self._to_minutes(task.start_time)
+            booked.append((start, start + task.duration))
+
+        current = DAY_START
+        while current + duration <= DAY_END:
+            end = current + duration
+            overlaps = any(start < end and current < task_end for start, task_end in booked)
+            if not overlaps:
+                hours, mins = divmod(current, 60)
+                return f"{hours:02d}:{mins:02d}"
+            current += 5
+
+        return None
